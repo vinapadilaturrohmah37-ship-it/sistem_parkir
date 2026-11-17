@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Hancurkan Balok</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+        }
+        h1 {
+            margin-bottom: 10px;
+            color: #00d9ff;
+            text-shadow: 0 0 10px #00d9ff;
+        }
+        .info {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        canvas {
+            background: #0f3460;
+            border: 3px solid #00d9ff;
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+            border-radius: 5px;
+        }
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+            color: #aaa;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 25px;
+            font-size: 16px;
+            background: #00d9ff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #00b8e6;
+            box-shadow: 0 0 15px #00d9ff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🧱 HANCURKAN BALOK 🎮</h1>
+    <div class="info">
+        <div>Skor: <span id="score">0</span></div>
+        <div>Nyawa: <span id="lives">3</span></div>
+    </div>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div class="controls">
+        <p>Gunakan tombol ← → untuk menggerakkan pemukul</p>
+        <button onclick="restartGame()">Mulai Ulang</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Objek bola
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height - 60,
+            radius: 10,
+            dx: 4,
+            dy: -4,
+            color: '#ffffff'
+        };
+        
+        // Objek pemukul
+        let paddle = {
+            width: 100,
+            height: 10,
+            x: (canvas.width - 100) / 2,
+            y: canvas.height - 20,
+            speed: 7,
+            color: '#00d9ff'
+        };
+        
+        // Pengaturan balok
+        const brickRowCount = 4;
+        const brickColumnCount = 8;
+        const brickWidth = 80;
+        const brickHeight = 25;
+        const brickPadding = 10;
+        const brickOffsetTop = 40;
+        const brickOffsetLeft = 35;
+        
+        let score = 0;
+        let lives = 3;
+        let bricks = [];
+        let rightPressed = false;
+        let leftPressed = false;
+        
+        // Membuat susunan balok
+        function createBricks() {
+            bricks = [];
+            for (let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < brickRowCount; r++) {
+                    const colors = ['#e94560', '#ff9800', '#4caf50', '#2196f3'];
+                    bricks[c][r] = { 
+                        x: 0, 
+                        y: 0, 
+                        status: 1,
+                        color: colors[r]
+                    };
+                }
+            }
+        }
+        
+        // Menggambar bola
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ball.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+        
+        // Menggambar pemukul
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
+            ctx.fillStyle = paddle.color;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = paddle.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+        
+        // Menggambar balok
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+                        const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = bricks[c][r].color;
+                        ctx.shadowBlur = 5;
+                        ctx.shadowColor = bricks[c][r].color;
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+        
+        // Deteksi tabrakan
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    const b = bricks[c][r];
+                    if (b.status === 1) {
+                        if (ball.x > b.x && ball.x < b.x + brickWidth &&
+                            ball.y > b.y && ball.y < b.y + brickHeight) {
+                            ball.dy = -ball.dy;
+                            b.status = 0;
+                            score += 10;
+                            document.getElementById('score').textContent = score;
+                            
+                            // Cek kemenangan
+                            if (score === brickRowCount * brickColumnCount * 10) {
+                                alert('🎉 SELAMAT! Kamu Menang! Skor akhir: ' + score);
+                                restartGame();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Gerakan dan logika utama
+        function moveEverything() {
+            // Gerakan pemukul
+            if (rightPressed && paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.speed;
+            } else if (leftPressed && paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            }
+            
+            // Gerakan bola
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            // Pantulan dinding kiri & kanan
+            if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+                ball.dx = -ball.dx;
+            }
+            
+            // Pantulan dinding atas
+            if (ball.y + ball.dy < ball.radius) {
+                ball.dy = -ball.dy;
+            }
+            
+            // Pantulan pemukul
+            if (ball.y + ball.radius > paddle.y &&
+                ball.x > paddle.x &&
+                ball.x < paddle.x + paddle.width) {
+                ball.dy = -ball.dy;
+            }
+            
+            // Bola jatuh ke bawah
+            if (ball.y + ball.dy > canvas.height - ball.radius) {
+                lives--;
+                document.getElementById('lives').textContent = lives;
+                
+                if (!lives) {
+                    alert('💀 Permainan Selesai! Skor Akhir: ' + score);
+                    restartGame();
+                } else {
+                    ball.x = canvas.width / 2;
+                    ball.y = canvas.height - 60;
+                    ball.dx = 4;
+                    ball.dy = -4;
+                    paddle.x = (canvas.width - paddle.width) / 2;
+                }
+            }
+        }
+        
+        // Menggambar semua elemen
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            collisionDetection();
+            moveEverything();
+            requestAnimationFrame(draw);
+        }
+        
+        // Kontrol tombol
+        document.addEventListener('keydown', keyDownHandler);
+        document.addEventListener('keyup', keyUpHandler);
+        
+        function keyDownHandler(e) {
+            if (e.key === 'ArrowRight') rightPressed = true;
+            else if (e.key === 'ArrowLeft') leftPressed = true;
+        }
+        
+        function keyUpHandler(e) {
+            if (e.key === 'ArrowRight') rightPressed = false;
+            else if (e.key === 'ArrowLeft') leftPressed = false;
+        }
+        
+        // Mulai ulang permainan
+        function restartGame() {
+            score = 0;
+            lives = 3;
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 60;
+            ball.dx = 4;
+            ball.dy = -4;
+            paddle.x = (canvas.width - paddle.width) / 2;
+            createBricks();
+        }
+        
+        // Jalankan game
+        createBricks();
+        draw();
+    </script>
+</body>
+</html>
