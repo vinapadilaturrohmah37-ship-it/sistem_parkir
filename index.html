@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Manajemen Parkir Web</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .clock {
+      font-size: 0.95rem;
+      background: rgba(255,255,255,0.15);
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      font-weight: 500;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      padding: 1.25rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-top: 0.35rem;
+      color: var(--text);
+    }
+
+    .stat-card.blue .value { color: var(--primary); }
+    .stat-card.green .value { color: var(--success); }
+    .stat-card.orange .value { color: var(--warning); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 0.65rem 1.2rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Main Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card h2 {
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    .plate-input {
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.65rem 1.1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: white; width: 100%; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+    .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.85rem; }
+
+    /* Table */
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .search-box {
+      max-width: 280px;
+      width: 100%;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f8fafc;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .badge-motor { background: #dbeafe; color: #1e40af; }
+    .badge-mobil { background: #dcfce7; color: #166534; }
+    .badge-truk { background: #fef3c7; color: #92400e; }
+
+    .plate-badge {
+      font-family: monospace;
+      font-weight: 700;
+      background: #1e293b;
+      color: white;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+    }
+
+    /* Modal Struk */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      max-width: 380px;
+      width: 100%;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .receipt {
+      font-family: 'Courier New', Courier, monospace;
+      border: 1px dashed #94a3b8;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #fafafa;
+    }
+
+    .receipt-header {
+      text-align: center;
+      border-bottom: 1px dashed #94a3b8;
+      padding-bottom: 0.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 0.35rem 0;
+      font-size: 0.9rem;
+    }
+
+    .receipt-total {
+      border-top: 1px dashed #94a3b8;
+      margin-top: 0.6rem;
+      padding-top: 0.6rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #1e293b;
+      color: white;
+      padding: 0.8rem 1.2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+      z-index: 2000;
+      font-size: 0.92rem;
+    }
+
+    .toast.show { display: block; }
+
+    /* Print Mode */
+    @media print {
+      body * { visibility: hidden; }
+      #receiptPrintArea, #receiptPrintArea * { visibility: visible; }
+      #receiptPrintArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🅿️ Sistem Manajemen Parkir</h1>
+    <div class="clock" id="liveClock">Memuat waktu...</div>
+  </header>
+
+  <div class="container">
+    <!-- Dashboard Stats -->
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="label">Kendaraan Parkir</div>
+        <div class="value" id="statOccupied">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Sisa Slot Tersedia</div>
+        <div class="value" id="statAvailable">100</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="label">Total Keluar Hari Ini</div>
+        <div class="value" id="statTodayOut">0</div>
+      </div>
+      <div class="stat-card green">
+        <div class="label">Pendapatan Hari Ini</div>
+        <div class="value" id="statRevenue">Rp 0</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('operasional', this)">Operasional Parkir</button>
+      <button class="tab-btn" onclick="switchTab('riwayat', this)">Riwayat Transaksi</button>
+      <button class="tab-btn" onclick="switchTab('pengaturan', this)">Pengaturan Tarif & Slot</button>
+    </div>
+
+    <!-- TAB 1: Operasional -->
+    <div id="tab-operasional" class="tab-content active">
+      <div class="main-grid">
+        <!-- Form Kendaraan Masuk -->
+        <div class="card">
+          <h2>Kendaraan Masuk</h2>
+          <form id="checkInForm">
+            <div class="form-group">
+              <label for="plateNumber">Plat Nomor</label>
+              <input type="text" id="plateNumber" class="form-control plate-input" placeholder="Contoh: B 1234 XYZ" required autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="vehicleType">Jenis Kendaraan</label>
+              <select id="vehicleType" class="form-control">
+                <option value="Motor">Motor</option>
+                <option value="Mobil">Mobil</option>
+                <option value="Truk">Box / Truk</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="notes">Catatan (Opsional)</label>
+              <input type="text" id="notes" class="form-control" placeholder="Contoh: Helm dititip / Area B" />
+            </div>
+            <button type="submit" class="btn btn-primary">+ Catat Kendaraan Masuk</button>
+          </form>
+        </div>
+
+        <!-- Daftar Kendaraan Aktif -->
+        <div class="card">
+          <div class="table-header">
+            <h2 style="margin:0; border:none; padding:0;">Kendaraan Sedang Parkir</h2>
+            <input type="text" id="searchActive" class="form-control search-box" placeholder="Cari plat atau kode tiket..." />
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tiket</th>
+                  <th>Plat Nomor</th>
+                  <th>Jenis</th>
+                  <th>Waktu Masuk</th>
+                  <th>Durasi</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="activeTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Riwayat -->
+    <div id="tab-riwayat" class="tab-content">
+      <div class="card">
+        <div class="table-header">
+          <h2 style="margin:0; border:none; padding:0;">Riwayat Kendaraan Keluar</h2>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <input type="text" id="searchHistory" class="form-control" style="width:220px;" placeholder="Cari riwayat..." />
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+            <button class="btn btn-danger btn-sm" onclick="clearHistory()">Hapus Riwayat</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Tiket</th>
+                <th>Plat Nomor</th>
+                <th>Jenis</th>
+                <th>Masuk</th>
+                <th>Keluar</th>
+                <th>Durasi</th>
+                <th>Biaya</th>
+                <th>Struk</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Pengaturan -->
+    <div id="tab-pengaturan" class="tab-content">
+      <div class="card" style="max-width: 500px;">
+        <h2>Pengaturan Parkir</h2>
+        <form id="settingsForm">
+          <div class="form-group">
+            <label for="setCapacity">Kapasitas Maksimal Slot Parkir</label>
+            <input type="number" id="setCapacity" class="form-control" min="1" required />
+          </div>
+          <div class="form-group">
+            <label for="setRateMotor">Tarif Motor per Jam (Rp)</label>
+            <input type="number" id="setRateMotor" class="form-control" min="0" step="500" required />
+          </div>
+          <div class="form-group">
+            <label for="setRateMobil">Tarif Mobil per Jam (Rp)</label>
+            <input type="number" id="setRateMobil" class="form-control" min="0" step="500" required />
+          </div>
+          <div class="form-group">
+            <label for="setRateTruk">Tarif Box / Truk per Jam (Rp)</label>
+            <input type="number" id="setRateTruk" class="form-control" min="0" step="500" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Struk -->
+  <div class="modal-overlay" id="receiptModal">
+    <div class="modal">
+      <div class="receipt" id="receiptPrintArea"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
+        <button class="btn btn-primary" style="width:auto;" onclick="window.print()">🖨️ Cetak Struk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // --- State & Storage ---
+    const DEFAULT_SETTINGS = {
+      capacity: 100,
+      rates: {
+        Motor: 2000,
+        Mobil: 5000,
+        Truk: 8000
+      }
+    };
+
+    let activeVehicles = JSON.parse(localStorage.getItem('parking_active')) || [];
+    let historyVehicles = JSON.parse(localStorage.getItem('parking_history')) || [];
+    let settings = JSON.parse(localStorage.getItem('parking_settings')) || DEFAULT_SETTINGS;
+
+    function saveData() {
+      localStorage.setItem('parking_active', JSON.stringify(activeVehicles));
+      localStorage.setItem('parking_history', JSON.stringify(historyVehicles));
+      localStorage.setItem('parking_settings', JSON.stringify(settings));
+    }
+
+    // --- Helpers ---
+    function formatRupiah(num) {
+      return 'Rp ' + Number(num).toLocaleString('id-ID');
+    }
+
+    function formatDateTime(isoString) {
+      const d = new Date(isoString);
+      return d.toLocaleString('id-ID', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function generateTicketId() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = 'PKR-';
+      for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    function calculateParking(checkInIso, vehicleType, checkOutIso = new Date().toISOString()) {
+      const start = new Date(checkInIso);
+      const end = new Date(checkOutIso);
+      const diffMs = Math.max(0, end - start);
+      const totalMinutes = Math.floor(diffMs / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      // Minimal bayar 1 jam, pembulatan ke atas per jam berikutnya
+      const billedHours = Math.max(1, Math.ceil(diffMs / 3600000));
+      const rate = settings.rates[vehicleType] || 2000;
+      const fee = billedHours * rate;
+
+      return {
+        durationText: `${hours}j ${minutes}m`,
+        billedHours,
+        fee
+      };
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // --- Clock ---
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('liveClock').textContent = now.toLocaleString('id-ID', {
+        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // --- Tabs ---
+    function switchTab(tabName, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // --- Render Functions ---
+    function renderStats() {
+      const occupied = activeVehicles.length;
+      const available = Math.max(0, settings.capacity - occupied);
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayOut = historyVehicles.filter(v => v.checkOutTime.slice(0, 10) === todayStr);
+      const revenue = todayOut.reduce((sum, v) => sum + v.fee, 0);
+
+      document.getElementById('statOccupied').textContent = occupied;
+      document.getElementById('statAvailable').textContent = available;
+      document.getElementById('statTodayOut').textContent = todayOut.length;
+      document.getElementById('statRevenue').textContent = formatRupiah(revenue);
+    }
+
+    function getBadgeClass(type) {
+      if (type === 'Motor') return 'badge-motor';
+      if (type === 'Mobil') return 'badge-mobil';
+      return 'badge-truk';
+    }
+
+    function renderActiveTable() {
+      const query = document.getElementById('searchActive').value.trim().toLowerCase();
+      const tbody = document.getElementById('activeTableBody');
+      const filtered = activeVehicles.filter(v =>
+        v.plate.toLowerCase().includes(query) || v.id.toLowerCase().includes(query)
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Tidak ada kendaraan sedang parkir.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(v => {
+        const calc = calculateParking(v.checkInTime, v.vehicleType);
+        return `
+          <tr>
+            <td><strong>${v.id}</strong></td>
+            <td><span class="plate-badge">${v.plate}</span></td>
+            <td><span class="badge ${getBadgeClass(v.vehicleType)}">${v.vehicleType}</span></td>
+            <td>${formatDateTime(v.checkInTime)}</td>
+            <td>${calc.durationText} (${formatRupiah(calc.fee)})</td>
+            <td style="display:flex; gap:0.4rem;">
+              <button class="btn btn-success btn-sm" onclick="checkOut('${v.id}')">Keluar</button>
+              <button class="btn btn-outline btn-sm" onclick="showCheckInReceipt('${v.id}')">Tiket</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderHistoryTable() {
+      const query = document.getElementById('searchHistory').value.trim().toLowerCase();
+      const tbody = document.getElementById('historyTableBody');
+      const filtered = historyVehicles.filter(v =>
+        v.plate.toLowerCase().includes(query) || v.id.toLowerCase().includes(query)
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Belum ada riwayat transaksi.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(v => `
+        <tr>
+          <td><strong>${v.id}</strong></td>
+          <td><span class="plate-badge">${v.plate}</span></td>
+          <td><span class="badge ${getBadgeClass(v.vehicleType)}">${v.vehicleType}</span></td>
+          <td>${formatDateTime(v.checkInTime)}</td>
+          <td>${formatDateTime(v.checkOutTime)}</td>
+          <td>${v.durationText} (${v.billedHours} jam)</td>
+          <td><strong>${formatRupiah(v.fee)}</strong></td>
+          <td><button class="btn btn-outline btn-sm" onclick="showCheckOutReceipt('${v.id}')">Struk</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function loadSettingsForm() {
+      document.getElementById('setCapacity').value = settings.capacity;
+      document.getElementById('setRateMotor').value = settings.rates.Motor;
+      document.getElementById('setRateMobil').value = settings.rates.Mobil;
+      document.getElementById('setRateTruk').value = settings.rates.Truk;
+    }
+
+    function renderAll() {
+      renderStats();
+      renderActiveTable();
+      renderHistoryTable();
+    }
+
+    // --- Actions ---
+    document.getElementById('checkInForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (activeVehicles.length >= settings.capacity) {
+        alert('Maaf, kapasitas parkir sudah penuh!');
+        return;
+      }
+
+      const plateInput = document.getElementById('plateNumber');
+      const plate = plateInput.value.trim().toUpperCase().replace(/\s+/g, ' ');
+      const vehicleType = document.getElementById('vehicleType').value;
+      const notes = document.getElementById('notes').value.trim();
+
+      if (!plate) return;
+
+      const exists = activeVehicles.some(v => v.plate === plate);
+      if (exists) {
+        alert(`Kendaraan dengan plat ${plate} masih tercatat sedang parkir!`);
+        return;
+      }
+
+      const newEntry = {
+        id: generateTicketId(),
+        plate,
+        vehicleType,
+        notes,
+        checkInTime: new Date().toISOString()
+      };
+
+      activeVehicles.unshift(newEntry);
+      saveData();
+      renderAll();
+      this.reset();
+      showToast(`Kendaraan ${plate} berhasil masuk (${newEntry.id})`);
+      showCheckInReceipt(newEntry.id);
+    });
+
+    function checkOut(id) {
+      const idx = activeVehicles.findIndex(v => v.id === id);
+      if (idx === -1) return;
+
+      const vehicle = activeVehicles[idx];
+      const checkOutTime = new Date().toISOString();
+      const calc = calculateParking(vehicle.checkInTime, vehicle.vehicleType, checkOutTime);
+
+      if (!confirm(`Proses keluar ${vehicle.plate}?\nDurasi: ${calc.durationText}\nTotal Biaya: ${formatRupiah(calc.fee)}`)) {
+        return;
+      }
+
+      const completed = {
+        ...vehicle,
+        checkOutTime,
+        durationText: calc.durationText,
+        billedHours: calc.billedHours,
+        fee: calc.fee
+      };
+
+      activeVehicles.splice(idx, 1);
+      historyVehicles.unshift(completed);
+      saveData();
+      renderAll();
+      showToast(`Pembayaran ${vehicle.plate}: ${formatRupiah(calc.fee)}`);
+      showCheckOutReceipt(completed.id);
+    }
+
+    // --- Receipts ---
+    function showCheckInReceipt(id) {
+      const v = activeVehicles.find(item => item.id === id);
+      if (!v) return;
+
+      document.getElementById('receiptPrintArea').innerHTML = `
+        <div class="receipt-header">
+          <strong>TIKET PARKIR MASUK</strong><br/>
+          <small>Sistem Parkir Digital</small>
+        </div>
+        <div class="receipt-row"><span>Kode Tiket:</span><strong>${v.id}</strong></div>
+        <div class="receipt-row"><span>Plat Nomor:</span><strong>${v.plate}</strong></div>
+        <div class="receipt-row"><span>Jenis:</span><span>${v.vehicleType}</span></div>
+        <div class="receipt-row"><span>Masuk:</span><span>${formatDateTime(v.checkInTime)}</span></div>
+        <div class="receipt-row"><span>Tarif/Jam:</span><span>${formatRupiah(settings.rates[v.vehicleType])}</span></div>
+        ${v.notes ? `<div class="receipt-row"><span>Catatan:</span><span>${v.notes}</span></div>` : ''}
+        <div style="text-align:center; margin-top:0.8rem; font-size:0.8rem;">
+          Simpan tiket ini untuk proses keluar.
+        </div>
+      `;
+      document.getElementById('receiptModal').classList.add('open');
+    }
+
+    function showCheckOutReceipt(id) {
+      const v = historyVehicles.find(item => item.id === id);
+      if (!v) return;
+
+      document.getElementById('receiptPrintArea').innerHTML = `
+        <div class="receipt-header">
+          <strong>STRUK PEMBAYARAN PARKIR</strong><br/>
+          <small>Sistem Parkir Digital</small>
+        </div>
+        <div class="receipt-row"><span>Kode Tiket:</span><strong>${v.id}</strong></div>
+        <div class="receipt-row"><span>Plat Nomor:</span><strong>${v.plate}</strong></div>
+        <div class="receipt-row"><span>Jenis:</span><span>${v.vehicleType}</span></div>
+        <div class="receipt-row"><span>Masuk:</span><span>${formatDateTime(v.checkInTime)}</span></div>
+        <div class="receipt-row"><span>Keluar:</span><span>${formatDateTime(v.checkOutTime)}</span></div>
+        <div class="receipt-row"><span>Durasi:</span><span>${v.durationText} (${v.billedHours} jam)</span></div>
+        <div class="receipt-row receipt-total"><span>TOTAL BAYAR:</span><span>${formatRupiah(v.fee)}</span></div>
+        <div style="text-align:center; margin-top:0.8rem; font-size:0.8rem;">
+          Terima kasih atas kunjungan Anda!
+        </div>
+      `;
+      document.getElementById('receiptModal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('receiptModal').classList.remove('open');
+    }
+
+    // --- Settings & Export ---
+    document.getElementById('settingsForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      settings.capacity = parseInt(document.getElementById('setCapacity').value, 10);
+      settings.rates.Motor = parseInt(document.getElementById('setRateMotor').value, 10);
+      settings.rates.Mobil = parseInt(document.getElementById('setRateMobil').value, 10);
+      settings.rates.Truk = parseInt(document.getElementById('setRateTruk').value, 10);
+      saveData();
+      renderAll();
+      showToast('Pengaturan berhasil disimpan!');
+    });
+
+    function clearHistory() {
+      if (confirm('Yakin ingin menghapus seluruh riwayat transaksi?')) {
+        historyVehicles = [];
+        saveData();
+        renderAll();
+        showToast('Riwayat transaksi dihapus.');
+      }
+    }
+
+    function exportCSV() {
+      if (historyVehicles.length === 0) {
+        alert('Tidak ada data riwayat untuk diekspor.');
+        return;
+      }
+      const headers = ['Kode Tiket', 'Plat Nomor', 'Jenis', 'Waktu Masuk', 'Waktu Keluar', 'Durasi', 'Biaya (Rp)'];
+      const rows = historyVehicles.map(v => [
+        v.id, v.plate, v.vehicleType,
+        formatDateTime(v.checkInTime), formatDateTime(v.checkOutTime),
+        `${v.durationText} (${v.billedHours} jam)`, v.fee
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,'
+        + [headers, ...rows].map(e => e.map(cell => `"${cell}"`).join(',')).join('\n');
+
+      const link = document.createElement('a');
+      link.setAttribute('href', encodeURI(csvContent));
+      link.setAttribute('download', `laporan-parkir-${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Search listeners & auto-refresh durasi tiap 30 detik
+    document.getElementById('searchActive').addEventListener('input', renderActiveTable);
+    document.getElementById('searchHistory').addEventListener('input', renderHistoryTable);
+    setInterval(renderActiveTable, 30000);
+
+    // Init
+    loadSettingsForm();
+    renderAll();
+  </script>
+</body>
+</html>
